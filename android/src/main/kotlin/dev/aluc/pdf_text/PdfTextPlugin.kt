@@ -3,6 +3,7 @@ package dev.aluc.pdf_text
 import android.os.Handler
 import android.os.Looper
 import androidx.annotation.NonNull
+import com.tom_roush.pdfbox.io.MemoryUsageSetting
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -183,7 +184,7 @@ public class PdfTextPlugin: FlutterPlugin, MethodCallHandler {
       return cachedDoc
     }
     return try {
-      val doc = PDDocument.load(File(path), password)
+      val doc = PDDocument.load(File(path), password, MemoryUsageSetting.setupTempFileOnly())
       cachedDoc = doc
       cachedDocPath = path
       if (initTextStripper) {
