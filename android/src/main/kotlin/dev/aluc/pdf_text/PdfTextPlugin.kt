@@ -168,7 +168,9 @@ public class PdfTextPlugin: FlutterPlugin, MethodCallHandler {
       pdfTextStripper.endPage = it
       try {
         missingPagesTexts.add(pdfTextStripper.getText(doc))
-      } catch (e: Exception) { }
+      } catch (e: Exception) {
+        missingPagesTexts.add("")
+      }
     }
     Handler(Looper.getMainLooper()).post {
       result.success(missingPagesTexts)
