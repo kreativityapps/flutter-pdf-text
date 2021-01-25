@@ -166,7 +166,17 @@ public class PdfTextPlugin: FlutterPlugin, MethodCallHandler {
     missingPagesNumbers.forEach {
       pdfTextStripper.startPage = it
       pdfTextStripper.endPage = it
-      missingPagesTexts.add(pdfTextStripper.getText(doc))
+      try {
+        missingPagesTexts.add(pdfTextStripper.getText(doc))
+      } catch (e: Exception) {
+        Handler(Looper.getMainLooper()).post {
+          result.error("Get Text Error",
+                  "Can't get text from PDF",
+                  e)
+        }
+        return
+      }
+
     }
     Handler(Looper.getMainLooper()).post {
       result.success(missingPagesTexts)
