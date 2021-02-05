@@ -2,7 +2,6 @@ package dev.aluc.pdf_text
 
 import android.os.Handler
 import android.os.Looper
-import androidx.annotation.NonNull
 import com.tom_roush.pdfbox.io.MemoryUsageSetting
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
@@ -33,7 +32,7 @@ public class PdfTextPlugin: FlutterPlugin, MethodCallHandler {
    */
   private var pdfTextStripper = PDFTextStripper()
 
-  override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+  override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
     val channel = MethodChannel(flutterPluginBinding.getFlutterEngine().getDartExecutor(), "pdf_text")
     channel.setMethodCallHandler(PdfTextPlugin());
   }
@@ -57,7 +56,7 @@ public class PdfTextPlugin: FlutterPlugin, MethodCallHandler {
     }
   }
 
-  override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
+  override fun onMethodCall(call: MethodCall, result: Result) {
     thread (start = true) {
       when (call.method) {
           "initDoc" -> {
@@ -89,7 +88,7 @@ public class PdfTextPlugin: FlutterPlugin, MethodCallHandler {
     }
   }
 
-  override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
+  override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
   }
 
   /**
@@ -100,24 +99,16 @@ public class PdfTextPlugin: FlutterPlugin, MethodCallHandler {
     // Getting the length of the PDF document in pages.
     val length = doc.numberOfPages
 
-    val info = doc.documentInformation
-
-    var creationDate: String? = null
-    if (info.creationDate != null) {
-      creationDate = info.creationDate.time.toString()
-    }
-    var modificationDate: String? = null
-    if (info.modificationDate != null) {
-      modificationDate = info.modificationDate.time.toString()
-    }
     val data = hashMapOf<String, Any>(
             "length" to length,
-            "info" to hashMapOf("author" to info.author,
-                    "creationDate" to creationDate,
-                    "modificationDate" to modificationDate,
-                    "creator" to info.creator, "producer" to info.producer,
-                    "keywords" to splitKeywords(info.keywords),
-                    "title" to info.title, "subject" to info.subject
+            "info" to hashMapOf("author" to "",
+                    "creationDate" to null,
+                    "modificationDate" to null,
+                    "creator" to "",
+                    "producer" to "",
+                    "keywords" to null,
+                    "title" to "",
+                    "subject" to ""
             )
     )
 
