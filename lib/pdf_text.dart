@@ -12,9 +12,9 @@ const String _TEMP_DIR_NAME = "/.flutter_pdf_text/";
 /// In order to create a new [PDFDoc] instance, one of these two static methods has
 ///  to be used: [PDFDoc.fromFile], [PDFDoc.fromPath].
 class PDFDoc {
-  File _file;
-  PDFDocInfo _info;
-  List<PDFPage> _pages;
+  late File _file;
+  PDFDocInfo? _info;
+  List<PDFPage>? _pages;
 
   PDFDoc._internal();
 
@@ -29,16 +29,16 @@ class PDFDoc {
       {String password = "", bool fastInit = false}) async {
     var doc = PDFDoc._internal();
     doc._file = file;
-    Map data;
+    Map? data;
     try {
       data = await _CHANNEL.invokeMethod('initDoc',
           {"path": file.path, "password": password, "fastInit": fastInit});
     } on Exception catch (e) {
       return Future.error(e);
     }
-    doc._pages = List();
-    for (int i = 0; i < data["length"]; i++) {
-      doc._pages.add(PDFPage._fromDoc(doc, i));
+    doc._pages = [];
+    for (int i = 0; i < data!["length"]; i++) {
+      doc._pages!.add(PDFPage._fromDoc(doc, i));
     }
     doc._info = PDFDocInfo._fromMap(data["info"]);
     return doc;
@@ -76,7 +76,7 @@ class PDFDoc {
           ".pdf";
       file = File(filePath);
       file.createSync(recursive: true);
-      file.writeAsBytesSync((await http.get(url)).bodyBytes);
+      file.writeAsBytesSync((await http.get(Uri.parse(url))).bodyBytes);
     } on Exception catch (e) {
       return Future.error(e);
     }
@@ -84,35 +84,37 @@ class PDFDoc {
   }
 
   /// Gets the page of the document at the given page number.
-  PDFPage pageAt(int pageNumber) => _pages[pageNumber - 1];
+  PDFPage pageAt(int pageNumber) => _pages![pageNumber - 1];
 
   /// Gets the pages of this document.
   /// The pages indexes start at 0, but the first page has number 1.
   /// Therefore, if you need to access the 5th page, you will do:
   /// var page = doc.pages[4]
   /// print(page.number) -> 5
-  List<PDFPage> get pages => _pages;
+  List<PDFPage>? get pages => _pages;
 
   /// Gets the number of pages of this document.
-  int get length => _pages.length;
+  int get length => _pages!.length;
 
   /// Gets the information of this document.
-  PDFDocInfo get info => _info;
+  PDFDocInfo? get info => _info;
 
   /// Gets the entire text content of the document.
   Future<String> get text async {
     // Collecting missing pages
-    List<int> missingPagesNumbers = List();
-    _pages.forEach((page) {
+    List<int> missingPagesNumbers = [];
+    _pages!.forEach((page) {
       if (page._text == null) {
         missingPagesNumbers.add(page.number);
       }
     });
     List<String> missingPagesTexts;
     try {
-      missingPagesTexts = List<String>.from(await _CHANNEL.invokeMethod(
-          'getDocText',
-          {"path": _file.path, "missingPagesNumbers": missingPagesNumbers}));
+      missingPagesTexts =
+          List<String>.from(await (_CHANNEL.invokeMethod('getDocText', {
+        "path": _file.path,
+        "missingPagesNumbers": missingPagesNumbers,
+      })));
     } on Exception catch (e) {
       return Future.error(e);
     }
@@ -121,7 +123,7 @@ class PDFDoc {
       pageAt(missingPagesNumbers[i])._text = missingPagesTexts[i];
     }
     String text = "";
-    _pages.forEach((page) => text += "${page._text}\n");
+    _pages!.forEach((page) => text += "${page._text}\n");
     return text;
   }
 
@@ -153,9 +155,9 @@ class PDFDoc {
 /// It needs not to be directly instantiated, instances will be automatically
 /// created by the [PDFDoc] class.
 class PDFPage {
-  PDFDoc _parentDoc;
-  int _number;
-  String _text;
+  late PDFDoc _parentDoc;
+  late int _number;
+  String? _text;
 
   PDFPage._fromDoc(PDFDoc parentDoc, int number) {
     _parentDoc = parentDoc;
@@ -165,7 +167,7 @@ class PDFPage {
   /// Gets the text of this page.
   /// The text retrieval is lazy. So the text of a page is only loaded when
   /// it is requested for the first time.
-  Future<String> get text async {
+  Future<String?> get text async {
     // Loading the text
     if (_text == null) {
       try {
@@ -186,14 +188,14 @@ class PDFPage {
 /// It needs not to be directly instantiated, instances will be automatically
 /// created by the [PDFDoc] class.
 class PDFDocInfo {
-  String _author;
-  DateTime _creationDate;
-  DateTime _modificationDate;
-  String _creator;
-  String _producer;
-  List<String> _keywords;
-  String _title;
-  String _subject;
+  String? _author;
+  DateTime? _creationDate;
+  DateTime? _modificationDate;
+  String? _creator;
+  String? _producer;
+  List<String>? _keywords;
+  String? _title;
+  String? _subject;
 
   PDFDocInfo._fromMap(Map data)
       : this._internal(
@@ -225,19 +227,19 @@ class PDFDocInfo {
   /// Gets the author of the document. This contains the original string of the
   /// authors contained in the document. Therefore there might be multiple
   /// authors separated by comma. Returns null if no author exists.
-  String get author => _author;
+  String? get author => _author;
 
   /// Gets the list of authors of the document. This is inferred by splitting
   /// the author string by comma. Returns null if no author exists.
-  List<String> get authors {
+  List<String>? get authors {
     if (author == null) {
       return null;
     }
-    var authorString = author.replaceAll(";", ",");
+    var authorString = author!.replaceAll(";", ",");
     authorString = authorString.replaceAll("&", ",");
     authorString = authorString.replaceAll("and", ",");
     List<String> splitted = authorString.split(",");
-    List<String> ret = List();
+    List<String> ret = [];
     for (var token in splitted) {
       var start = 0;
       var end = token.length - 1;
@@ -256,24 +258,24 @@ class PDFDocInfo {
 
   /// Gets the creation date of the document. Returns null if no creation
   /// date exists.
-  DateTime get creationDate => _creationDate;
+  DateTime? get creationDate => _creationDate;
 
   /// Gets the modification date of the document. Returns null if no
   /// modification date exists.
-  DateTime get modificationDate => _modificationDate;
+  DateTime? get modificationDate => _modificationDate;
 
   /// Gets the creator of the document. Returns null if no creator exists.
-  String get creator => _creator;
+  String? get creator => _creator;
 
   /// Gets the producer of the document. Returns null if no producer exists.
-  String get producer => _producer;
+  String? get producer => _producer;
 
   /// Gets the list of keywords of the document. Returns null if no keyword exists.
-  List<String> get keywords => _keywords;
+  List<String>? get keywords => _keywords;
 
   /// Gets the title of the document. Returns null if no title exists.
-  String get title => _title;
+  String? get title => _title;
 
   /// Gets the subject of the document. Returns null if no subject exists.
-  String get subject => _subject;
+  String? get subject => _subject;
 }
