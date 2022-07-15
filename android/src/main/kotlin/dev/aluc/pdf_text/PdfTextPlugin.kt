@@ -1,14 +1,16 @@
 package dev.aluc.pdf_text
 
+import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.io.MemoryUsageSetting
 import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterPluginBinding
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
-import io.flutter.plugin.common.PluginRegistry.Registrar
 
 import java.io.File
 
@@ -19,41 +21,31 @@ import com.tom_roush.pdfbox.text.PDFTextStripper
 import kotlin.concurrent.thread
 
 /** PdfTextPlugin */
-public class PdfTextPlugin: FlutterPlugin, MethodCallHandler {
+class PdfTextPlugin: MethodCallHandler, FlutterPlugin {
 
   /**
    * PDF document cached from the previous use.
    */
   private var cachedDoc: PDDocument? = null
   private var cachedDocPath: String? = null
+  private var applicationContext: Context? = null
+  private var methodChannel: MethodChannel? = null
 
   /**
    * PDF text stripper.
    */
-  private var pdfTextStripper = PDFTextStripper()
+  private var pdfTextStripper: PDFTextStripper? = null
 
-  override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-    val channel = MethodChannel(flutterPluginBinding.getFlutterEngine().getDartExecutor(), "pdf_text")
-    channel.setMethodCallHandler(PdfTextPlugin());
+  companion object {
+    private const val CHANNEL_NAME = "pdf_text"
   }
 
-
-
-  // This static function is optional and equivalent to onAttachedToEngine. It supports the old
-  // pre-Flutter-1.12 Android projects. You are encouraged to continue supporting
-  // plugin registration via this function while apps migrate to use the new Android APIs
-  // post-flutter-1.12 via https://flutter.dev/go/android-project-migration.
-  //
-  // It is encouraged to share logic between onAttachedToEngine and registerWith to keep
-  // them functionally equivalent. Only one of onAttachedToEngine or registerWith will be called
-  // depending on the user's project. onAttachedToEngine or registerWith must both be defined
-  // in the same class.
-  companion object {
-    @JvmStatic
-    fun registerWith(registrar: Registrar) {
-      val channel = MethodChannel(registrar.messenger(), "pdf_text")
-      channel.setMethodCallHandler(PdfTextPlugin())
-    }
+  override fun onAttachedToEngine(binding: FlutterPluginBinding) {
+    applicationContext = binding.applicationContext
+    PDFBoxResourceLoader.init(applicationContext)
+    pdfTextStripper = PDFTextStripper()
+    methodChannel = MethodChannel(binding.binaryMessenger, CHANNEL_NAME)
+    methodChannel!!.setMethodCallHandler(this)
   }
 
   override fun onMethodCall(call: MethodCall, result: Result) {
@@ -88,7 +80,11 @@ public class PdfTextPlugin: FlutterPlugin, MethodCallHandler {
     }
   }
 
-  override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+  override fun onDetachedFromEngine(binding: FlutterPluginBinding) {
+    applicationContext = null
+    cachedDoc?.close()
+    methodChannel!!.setMethodCallHandler(null)
+    methodChannel = null
   }
 
   /**
@@ -124,7 +120,7 @@ public class PdfTextPlugin: FlutterPlugin, MethodCallHandler {
     if (keywordsString == null) {
       return null
     }
-    var keywords = keywordsString.split(",").toMutableList()
+    val keywords = keywordsString.split(",").toMutableList()
     for (i in keywords.indices) {
       var keyword = keywords[i]
       keyword = keyword.dropWhile { it == ' ' }
@@ -139,9 +135,9 @@ public class PdfTextPlugin: FlutterPlugin, MethodCallHandler {
    */
   private fun getDocPageText(result: Result, path: String, pageNumber: Int) {
     val doc = getDoc(result, path) ?: return
-    pdfTextStripper.startPage = pageNumber
-    pdfTextStripper.endPage = pageNumber
-    val text = pdfTextStripper.getText(doc)
+    pdfTextStripper?.startPage = pageNumber
+    pdfTextStripper?.endPage = pageNumber
+    val text = pdfTextStripper?.getText(doc)
     Handler(Looper.getMainLooper()).post {
       result.success(text)
     }
@@ -153,12 +149,12 @@ public class PdfTextPlugin: FlutterPlugin, MethodCallHandler {
    */
   private fun getDocText(result: Result, path: String, missingPagesNumbers: List<Int>) {
     val doc = getDoc(result, path) ?: return
-    var missingPagesTexts = arrayListOf<String>()
+    val missingPagesTexts = arrayListOf<String>()
     missingPagesNumbers.forEach {
-      pdfTextStripper.startPage = it
-      pdfTextStripper.endPage = it
+      pdfTextStripper?.startPage = it
+      pdfTextStripper?.endPage = it
       try {
-        missingPagesTexts.add(pdfTextStripper.getText(doc))
+        missingPagesTexts.add(pdfTextStripper?.getText(doc) ?: "")
       } catch (e: Exception) {
         missingPagesTexts.add("")
       }
@@ -200,8 +196,8 @@ public class PdfTextPlugin: FlutterPlugin, MethodCallHandler {
    * Initializes the text stripper engine. This can take some time.
    */
   private fun initTextStripperEngine(doc: PDDocument) {
-    pdfTextStripper.startPage = 1
-    pdfTextStripper.endPage = 1
-    pdfTextStripper.getText(doc)
+    pdfTextStripper?.startPage = 1
+    pdfTextStripper?.endPage = 1
+    pdfTextStripper?.getText(doc)
   }
 }

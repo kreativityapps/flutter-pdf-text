@@ -2,10 +2,10 @@ group 'dev.aluc.pdf_text'
 version '1.0-SNAPSHOT'
 
 buildscript {
-    ext.kotlin_version = '1.5.0'
+    ext.kotlin_version = '1.6.21'
     repositories {
         google()
-        jcenter()
+        mavenCentral()
     }
 
     dependencies {
@@ -17,7 +17,7 @@ buildscript {
 rootProject.allprojects {
     repositories {
         google()
-        jcenter()
+        mavenCentral()
         maven { url "https://jitpack.io" }
     }
 }
@@ -26,7 +26,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 30
+    compileSdkVersion 31
 
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
@@ -46,8 +46,9 @@ configurations.all {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation("com.tom-roush:pdfbox-android:2.0.24.0")
 //    implementation (name: 'pdfbox-android-release-2.0.0.0-SNAPSHOT', ext:'aar')
-    implementation 'com.github.m-awadi:PdfBox-Android:v2.0.18'
+//    implementation 'com.github.m-awadi:PdfBox-Android:v2.0.18'
 //    implementation 'com.github.m-awadi:PdfBox-Android:-SNAPSHOT'
 //    implementation 'com.github.kreativityapps:PdfBox-Android:v2.0.22'
 //    implementation 'com.github.kreativityapps:pdfboxandroid:v2.0.18'
