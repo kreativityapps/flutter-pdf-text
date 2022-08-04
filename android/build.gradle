@@ -2,7 +2,7 @@ group 'dev.aluc.pdf_text'
 version '1.0-SNAPSHOT'
 
 buildscript {
-    ext.kotlin_version = '1.6.21'
+    ext.kotlin_version = '1.7.10'
     repositories {
         google()
         mavenCentral()
@@ -46,7 +46,7 @@ configurations.all {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation("com.tom-roush:pdfbox-android:2.0.24.0")
+    implementation("com.tom-roush:pdfbox-android:2.0.25.0")
 //    implementation (name: 'pdfbox-android-release-2.0.0.0-SNAPSHOT', ext:'aar')
 //    implementation 'com.github.m-awadi:PdfBox-Android:v2.0.18'
 //    implementation 'com.github.m-awadi:PdfBox-Android:-SNAPSHOT'
