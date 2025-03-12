@@ -105,17 +105,20 @@ public class SwiftPdfTextPlugin: NSObject, FlutterPlugin {
          result(FlutterError(code: "DOC_ERROR", message: "Unable to retrieve the document.", details: nil))
          return
      }
-
+     let pageCount = doc.pageCount
      var missingPagesTexts = [String]()
      for pageNumber in missingPagesNumbers {
-         guard let page = doc.page(at: pageNumber-1), let string = page.string else {
-             // Optionally handle pages without text or non-existent pages if needed
+         let index = pageNumber - 1
+         if index < 0 || index >= pageCount {
+             missingPagesTexts.append("")
              continue
          }
+       if let page = doc.page(at: index), let string = page.string {
          missingPagesTexts.append(string)
+            } else {
+                missingPagesTexts.append("")
+            }
      }
-
-     // Send the result back on the main thread
      DispatchQueue.main.async {
          result(missingPagesTexts)
      }

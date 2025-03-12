@@ -12,6 +12,11 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+
 import java.io.File
 
 
@@ -149,15 +154,20 @@ class PdfTextPlugin: MethodCallHandler, FlutterPlugin {
    */
   private fun getDocText(result: Result, path: String, missingPagesNumbers: List<Int>) {
     val doc = getDoc(result, path) ?: return
-    val missingPagesTexts = arrayListOf<String>()
-    missingPagesNumbers.forEach {
-      pdfTextStripper?.startPage = it
-      pdfTextStripper?.endPage = it
-      try {
-        missingPagesTexts.add(pdfTextStripper?.getText(doc) ?: "")
-      } catch (e: Exception) {
-        missingPagesTexts.add("")
-      }
+    val missingPagesTexts = runBlocking {
+      missingPagesNumbers.map { pageNum ->
+        async(Dispatchers.Default) {
+          val stripper = PDFTextStripper().apply {
+            startPage = pageNum
+            endPage = pageNum
+          }
+          try {
+            stripper.getText(doc)
+          } catch (e: Exception) {
+            ""
+          }
+        }
+      }.awaitAll()
     }
     Handler(Looper.getMainLooper()).post {
       result.success(missingPagesTexts)
